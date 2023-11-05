@@ -15,8 +15,6 @@ pub struct FileResponse {
 #[cfg(feature = "axum")]
 impl axum::response::IntoResponse for FileResponse {
     fn into_response(self) -> axum::response::Response {
-        use axum::http::HeaderValue;
-        use axum::response::{IntoResponse, Response};
         self.body.into_response()
     }
 }
@@ -33,7 +31,7 @@ impl FileResponse {
         let buf = read(path)?;
 
         let path = PathBuf::from(file_name.as_ref());
-        let content_type = ContentType::from_extension(path.extension()).unwrap_or("text/plain");
+        let content_type = ContentType::from_extension(path.extension()).content_type().unwrap_or("text/plain");
         let file_name: String =
             url::form_urlencoded::byte_serialize(file_name.as_ref().as_bytes()).collect();
         let content_disposition = format!("attachment; filename={}", file_name);
