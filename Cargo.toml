@@ -1,0 +1,13 @@
+[package]
+name = "wtl"
+version = "0.1.1"
+edition = "2021"
+license = "MIT"
+description = "libs for web"
+
+[dependencies]
+axum = {version = "0.6.20", optional = true}
+hyper = "0.14.27"
+url = "2.4.1"
+
+[features]
