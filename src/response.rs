@@ -1,11 +1,10 @@
 use crate::header::content::ContentDisposition;
 use crate::header::ContentType;
-use hyper::header::HeaderValue;
 use hyper::header::{ACCESS_CONTROL_EXPOSE_HEADERS, CONTENT_DISPOSITION, CONTENT_TYPE};
 use hyper::{Body, Response, StatusCode};
 use std::fs::read;
 use std::io::Result;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 type BodyResponse = hyper::Response<Body>;
 #[derive(Default)]

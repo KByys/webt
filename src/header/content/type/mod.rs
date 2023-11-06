@@ -2,14 +2,14 @@ mod r#match;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 
-use hyper::{HeaderMap, header::HeaderValue};
+use hyper::{header::HeaderName, header::HeaderValue, HeaderMap};
 
-use crate::header::HeaderParserError;
+use crate::header::{HeaderKey, HeaderParserError};
 #[derive(Default, Debug, Clone)]
 pub struct ContentType {
     inner: String,
 }
-// #[cfg(features = "axum")]
+#[cfg(features = "axum")]
 #[axum::async_trait]
 impl<S> axum::extract::FromRequestParts<S> for ContentType {
     type Rejection = String;
@@ -47,7 +47,7 @@ impl TryFrom<ContentType> for HeaderValue {
     fn try_from(value: ContentType) -> Result<Self, Self::Error> {
         match r#match::match_self(&value.inner) {
             Some(value) => Ok(HeaderValue::from_static(value)),
-            _ => Ok(HeaderValue::from_str(&value.inner)?)
+            _ => Ok(HeaderValue::from_str(&value.inner)?),
         }
     }
 }
@@ -66,11 +66,24 @@ impl ContentType {
     pub fn as_extension(&self) -> Option<&'static str> {
         r#match::as_extension(Some(self.inner.as_str()))
     }
-    pub fn content_type(&self) -> &str {
+}
+impl HeaderKey for ContentType {
+    fn header_name(&self) -> HeaderName {
+        CONTENT_TYPE
+    }
+
+    fn value(&self) -> &str {
         &self.inner
     }
-    pub fn static_content_type(&self, or: &'static str) -> &'static str {
-        r#match::match_self(&self.inner).unwrap_or(or)
+
+    fn header_value(&self) -> HeaderValue {
+        match self.try_header_value() {
+            Ok(value) => value,
+            Err(e) => panic!("{}", e),
+        }
     }
-    
+
+    fn try_header_value(&self) -> Result<HeaderValue, hyper::header::InvalidHeaderValue> {
+        HeaderValue::from_str(self.value())
+    }
 }

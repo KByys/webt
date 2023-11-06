@@ -1,8 +1,8 @@
-use webt::header::authorization::Basic;
+use webt::header::{authorization::Basic, HeaderKey};
 
 fn main() {
     let basic = Basic::new("karl", "123456");
-    println!("{}", basic.basic());
-    let basic = Basic::try_from(basic.basic());
+    println!("{}", basic.value());
+    let basic = Basic::try_from(basic.value());
     println!("{:#?}", basic)
 }

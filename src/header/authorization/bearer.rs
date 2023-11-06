@@ -1,7 +1,7 @@
 use hyper::header::{HeaderMap, HeaderValue};
 
-use crate::header::HeaderParserError;
-// #[cfg(feature = "axum")]
+use crate::header::{HeaderKey, HeaderParserError};
+#[cfg(feature = "axum")]
 #[axum::async_trait]
 impl<S> axum::extract::FromRequestParts<S> for Bearer {
     type Rejection = String;
@@ -9,7 +9,7 @@ impl<S> axum::extract::FromRequestParts<S> for Bearer {
         parts: &mut axum::http::request::Parts,
         _state: &S,
     ) -> Result<Self, Self::Rejection> {
-        Bearer::try_from(&parts.headers).map_err(|err|err.to_string())
+        Bearer::try_from(&parts.headers).map_err(|err| err.to_string())
     }
 }
 use hyper::header::AUTHORIZATION;
@@ -55,6 +55,7 @@ impl TryFrom<&str> for Bearer {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         if let Some(token) = value.strip_prefix("Bearer ") {
             Ok(Self {
+                bearer: value.into(),
                 token: token.into(),
             })
         } else {
@@ -64,6 +65,7 @@ impl TryFrom<&str> for Bearer {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bearer {
+    bearer: String,
     token: String,
 }
 impl AsRef<str> for Bearer {
@@ -76,9 +78,19 @@ impl Bearer {
         self.token.as_str()
     }
     pub fn new(token: impl Into<String>) -> Self {
-        Self { token: token.into() }
+        let token = token.into();
+        Self {
+            bearer: format!("Bearer {}", token),
+            token,
+        }
     }
-    pub fn bearer(&self) -> String {
-        format!("Bearer {}", self.token)
+}
+impl HeaderKey for Bearer {
+    fn header_name(&self) -> hyper::http::HeaderName {
+        AUTHORIZATION
+    }
+
+    fn value(&self) -> &str {
+        &self.bearer
     }
 }

@@ -6,7 +6,7 @@ license = "MIT"
 description = "libs for web"
 
 [dependencies]
-axum = {version = "0.6.20", optional = false}
+axum = {version = "0.6.20", optional = true}
 base64 = "0.21.5"
 hyper = "0.14.27"
 url = "2.4.1"

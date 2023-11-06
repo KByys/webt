@@ -1,15 +1,16 @@
 use base64::{engine::general_purpose::STANDARD, Engine};
 use hyper::header::{HeaderMap, HeaderValue};
 
-use crate::header::HeaderParserError;
+use crate::header::{HeaderKey, HeaderParserError};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Basic {
+    basic: String,
     username: String,
     password: String,
 }
 
-// #[cfg(feature = "axum")]
+#[cfg(feature = "axum")]
 #[axum::async_trait]
 impl<S> axum::extract::FromRequestParts<S> for Basic {
     type Rejection = String;
@@ -69,6 +70,7 @@ impl TryFrom<&str> for Basic {
         let basic: Vec<_> = decoded_str.splitn(2, ':').collect();
         if basic.len() == 2 {
             Ok(Self {
+                basic: decoded_str.to_string(),
                 username: basic[0].trim().to_owned(),
                 password: basic[1].trim().to_owned(),
             })
@@ -80,9 +82,13 @@ impl TryFrom<&str> for Basic {
 
 impl Basic {
     pub fn new(username: impl Into<String>, password: impl Into<String>) -> Self {
+        let username = username.into();
+        let password = password.into();
+        let basic = STANDARD.encode(format!("{}:{}", username, password).as_bytes());
         Self {
-            username: username.into(),
-            password: password.into(),
+            basic,
+            username,
+            password,
         }
     }
     pub fn username(&self) -> &str {
@@ -91,8 +97,13 @@ impl Basic {
     pub fn password(&self) -> &str {
         &self.password
     }
-    pub fn basic(&self) -> String {
-        let basic = STANDARD.encode(format!("{}:{}", self.username, self.password));
-        format!("Basic {}", basic)
+}
+impl HeaderKey for Basic {
+    fn header_name(&self) -> hyper::http::HeaderName {
+        AUTHORIZATION
+    }
+
+    fn value(&self) -> &str {
+        &self.basic
     }
 }

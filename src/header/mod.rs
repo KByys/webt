@@ -1,13 +1,29 @@
 pub mod authorization;
 pub mod content;
-pub mod cookie;
-use std::{fmt::Display, string::FromUtf8Error};
-
-pub use authorization::Bearer;
+#[allow(unused)]
+mod cookie;
 use base64::DecodeError;
-pub use content::ContentType;
 use hyper::header::ToStrError;
-use hyper::header::HeaderName;
+use std::{fmt::Display, string::FromUtf8Error};
+pub use {
+    authorization::{Basic, Bearer},
+    content::{ContentDisposition, ContentType},
+    hyper::header::{HeaderMap, HeaderName, HeaderValue, InvalidHeaderName, InvalidHeaderValue},
+};
+
+pub trait HeaderKey {
+    fn header_name(&self) -> HeaderName;
+    fn value(&self) -> &str;
+    fn header_value(&self) -> HeaderValue {
+        match self.try_header_value() {
+            Ok(value) => value,
+            Err(e) => panic!("{}", e),
+        }
+    }
+    fn try_header_value(&self) -> Result<HeaderValue, InvalidHeaderValue> {
+        HeaderValue::from_str(self.value())
+    }
+}
 
 pub struct Header<T>(pub T);
 

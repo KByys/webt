@@ -3,7 +3,7 @@ use hyper::HeaderMap;
 use url;
 use url::form_urlencoded::byte_serialize;
 
-use crate::header::HeaderParserError;
+use crate::header::{HeaderKey, HeaderParserError};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContentDisposition {
@@ -90,9 +90,6 @@ impl ContentDisposition {
     pub fn file_name(&self) -> Option<&str> {
         Some(self.file_name.as_ref()?)
     }
-    pub fn content_disposition(&self) -> &str {
-        &self.inner
-    }
     pub fn is_inline(&self) -> bool {
         self.inner.starts_with("inline")
     }
@@ -102,5 +99,15 @@ impl ContentDisposition {
             inner: format!("attachment; filename=\"{}\"", encode_file_name),
             file_name: Some(file_name.as_ref().into()),
         }
+    }
+}
+
+impl HeaderKey for ContentDisposition {
+    fn header_name(&self) -> hyper::http::HeaderName {
+        CONTENT_DISPOSITION
+    }
+
+    fn value(&self) -> &str {
+        &self.inner
     }
 }
