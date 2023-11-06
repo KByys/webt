@@ -243,7 +243,6 @@ pub fn match_self(content_type: &str) -> Option<&'static str> {
         "application/vnd.iphone" => "application/vnd.iphone",
         "application/vnd.android.package-archive" => "application/vnd.android.package-archive",
         "application/x-silverlight-app" => "application/x-silverlight-app",
-
         _ => "",
     };
     if content_type.is_empty() {

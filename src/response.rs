@@ -1,4 +1,5 @@
-use crate::content_type::ContentType;
+use crate::header::content::ContentDisposition;
+use crate::header::ContentType;
 use hyper::header::HeaderValue;
 use hyper::header::{ACCESS_CONTROL_EXPOSE_HEADERS, CONTENT_DISPOSITION, CONTENT_TYPE};
 use hyper::{Body, Response, StatusCode};
@@ -30,18 +31,12 @@ impl FileResponse {
     pub fn open_and_set(file_name: impl AsRef<str>, path: impl AsRef<Path>) -> Result<Self> {
         let buf = read(path)?;
 
-        let path = PathBuf::from(file_name.as_ref());
-        let content_type = ContentType::from_extension(path.extension()).content_type().unwrap_or("text/plain");
-        let file_name: String =
-            url::form_urlencoded::byte_serialize(file_name.as_ref().as_bytes()).collect();
-        let content_disposition = format!("attachment; filename={}", file_name);
+        let content_type =
+            ContentType::from_filename(file_name.as_ref()).expect("The extension is not supported");
         let body = Response::builder()
             .status(StatusCode::OK)
-            .header(CONTENT_TYPE, HeaderValue::from_static(content_type))
-            .header(
-                CONTENT_DISPOSITION,
-                HeaderValue::from_str(content_disposition.as_str()).unwrap(),
-            )
+            .header(CONTENT_TYPE, content_type)
+            .header(CONTENT_DISPOSITION, ContentDisposition::new(file_name))
             .header(ACCESS_CONTROL_EXPOSE_HEADERS, CONTENT_DISPOSITION)
             .body(Body::from(buf))
             .unwrap();

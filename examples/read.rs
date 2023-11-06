@@ -2,7 +2,6 @@ use std::{
     fs::File,
     io::{BufRead, BufReader},
 };
-
 fn main() {
     let f = File::open("content_type.txt").unwrap();
     let mut reader = BufReader::new(f);

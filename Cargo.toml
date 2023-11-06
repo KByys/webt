@@ -1,12 +1,13 @@
 [package]
-name = "wtl"
-version = "0.1.2"
+name = "webt"
+version = "0.0.1"
 edition = "2021"
 license = "MIT"
 description = "libs for web"
 
 [dependencies]
-axum = {version = "0.6.20", optional = true}
+axum = {version = "0.6.20", optional = false}
+base64 = "0.21.5"
 hyper = "0.14.27"
 url = "2.4.1"
 
