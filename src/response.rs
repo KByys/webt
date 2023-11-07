@@ -8,18 +8,18 @@ use std::path::Path;
 
 type BodyResponse = hyper::Response<Body>;
 #[derive(Default)]
-pub struct FileResponse {
+pub struct BodyFile {
     pub body: BodyResponse,
 }
 
 #[cfg(feature = "axum")]
-impl axum::response::IntoResponse for FileResponse {
+impl axum::response::IntoResponse for BodyFile {
     fn into_response(self) -> axum::response::Response {
         self.body.into_response()
     }
 }
 
-impl FileResponse {
+impl BodyFile {
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
         let file_name = match path.as_ref().file_name() {
             Some(file_name) => file_name.to_string_lossy().to_string(),
