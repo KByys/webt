@@ -1,18 +1,10 @@
+use std::pin::Pin;
+
 use hyper::header::{HeaderMap, HeaderValue};
 
 use crate::header::{HeaderKey, HeaderParserError};
-#[cfg(feature = "axum")]
-#[axum::async_trait]
-impl<S> axum::extract::FromRequestParts<S> for Bearer {
-    type Rejection = String;
-    async fn from_request_parts(
-        parts: &mut axum::http::request::Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        Bearer::try_from(&parts.headers).map_err(|err| err.to_string())
-    }
-}
 use hyper::header::AUTHORIZATION;
+
 impl TryFrom<&HeaderMap> for Bearer {
     type Error = HeaderParserError;
 
@@ -61,6 +53,30 @@ impl TryFrom<&str> for Bearer {
         } else {
             Err(HeaderParserError::InvalidValue(value.into()))
         }
+    }
+}
+unsafe impl Send for Bearer {}
+    
+
+unsafe impl Sync for Bearer {}
+impl Unpin for Bearer {}
+impl hyper::body::HttpBody for Bearer {
+    type Data = <std::string::String as hyper::body::HttpBody>::Data;
+
+    type Error = <std::string::String as hyper::body::HttpBody>::Error;
+
+    fn poll_data(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Result<Self::Data, Self::Error>>> {
+        Pin::new(&mut self.bearer).poll_data(cx)
+    }
+
+    fn poll_trailers(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<Option<HeaderMap>, Self::Error>> {
+        Pin::new(&mut self.bearer).poll_trailers(cx)
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use hyper::header::HeaderValue;
 use hyper::HeaderMap;
 use url;
@@ -8,13 +10,15 @@ use crate::header::{HeaderKey, HeaderParserError};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContentDisposition {
     inner: String,
-    file_name: Option<String>,
+    filename: Option<String>,
+    name: Option<String>,
 }
 impl Default for ContentDisposition {
     fn default() -> Self {
         Self {
             inner: "inline".to_owned(),
-            file_name: None,
+            filename: None,
+            name: None,
         }
     }
 }
@@ -37,17 +41,23 @@ impl TryFrom<&HeaderValue> for ContentDisposition {
     }
 }
 
-fn parse_file_name(inner: &str) -> Option<String> {
-    let decoded_str: Vec<_> = url::form_urlencoded::parse(inner.as_bytes())
-        .map(|f| f.1)
-        .collect();
-    let file_name = decoded_str.get(0)?;
-    if file_name.is_empty() {
-        None
+fn parse(inner: &str) -> (Option<String>, Option<String>) {
+    if let Some(value) = inner.strip_prefix("attachment;") {
+        let decoded_str: HashMap<String, String> = url::form_urlencoded::parse(value.as_bytes())
+            .map(|f| (f.0.trim().into(), f.1.trim().into()))
+            .collect();
+        let filename = decoded_str
+            .get("filename")
+            .map(|name| name.replace('\"', ""));
+        let name = decoded_str
+            .get("name")
+            .map(|name| name.replace('\"', ""));
+        (filename, name)
     } else {
-        Some(file_name.trim().replace('\"', ""))
+        (None, None)
     }
 }
+
 impl TryFrom<String> for ContentDisposition {
     type Error = HeaderParserError;
 
@@ -68,9 +78,11 @@ impl TryFrom<&str> for ContentDisposition {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         if value.starts_with("inline") || value.starts_with("attachment") {
+            let (filename, name) = parse(value);
             Ok(Self {
                 inner: value.trim().into(),
-                file_name: parse_file_name(value.trim()),
+                filename,
+                name,
             })
         } else {
             Err(HeaderParserError::InvalidValue(value.into()))
@@ -88,16 +100,57 @@ impl TryFrom<ContentDisposition> for HeaderValue {
 
 impl ContentDisposition {
     pub fn file_name(&self) -> Option<&str> {
-        Some(self.file_name.as_ref()?)
+        Some(self.filename.as_ref()?)
     }
+    pub fn name(&self) -> Option<&str> {
+        Some(self.name.as_ref()?)
+    }
+
     pub fn is_inline(&self) -> bool {
         self.inner.starts_with("inline")
     }
-    pub fn new(file_name: impl AsRef<str>) -> Self {
-        let encode_file_name: String = byte_serialize(file_name.as_ref().as_bytes()).collect();
+    pub fn new(filename: Option<String>, name: Option<String>) -> Self {
+        let mut encode_str = String::new();
+        if let Some(filename) = &filename {
+            encode_str = format!(
+                "filename=\"{}\"",
+                byte_serialize(filename.as_bytes()).collect::<String>()
+            );
+        }
+
+        if let Some(name) = &name {
+            if encode_str.is_empty() {
+                encode_str = format!(
+                    "filename=\"{}\"",
+                    byte_serialize(name.as_bytes()).collect::<String>()
+                );
+            } else {
+                encode_str = format!("{}&name=\"{}\"", encode_str, name);
+            }
+        }
+        if encode_str.is_empty() {
+            Self {
+                inner: "attachment;".to_owned(),
+                filename: None,
+                name: None,
+            }
+        } else {
+            Self {
+                inner: format!("attachment; {}", encode_str),
+                filename,
+                name,
+            }
+        }
+    }
+    pub fn new_with_filename(filename: impl AsRef<str>) -> Self {
+        let inner = format!(
+            "filename=\"{}\"",
+            byte_serialize(filename.as_ref().as_bytes()).collect::<String>()
+        );
         Self {
-            inner: format!("attachment; filename=\"{}\"", encode_file_name),
-            file_name: Some(file_name.as_ref().into()),
+            inner: format!("attachment; {}", inner),
+            filename: Some(filename.as_ref().into()),
+            name: None,
         }
     }
 }

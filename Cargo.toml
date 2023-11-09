@@ -1,14 +1,13 @@
 [package]
 name = "webt"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 license = "MIT"
 description = "libs for web"
 homepage = "https://github.com/KByys/webt.git"
 [dependencies]
-axum = {version = "0.6.20", optional = true}
+axum = { version = "0.6.20", optional = true }
 base64 = "0.21.5"
 hyper = "0.14.27"
 url = "2.4.1"
-
 [features]

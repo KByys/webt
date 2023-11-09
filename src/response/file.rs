@@ -31,11 +31,11 @@ impl BodyFile {
         let buf = read(path)?;
 
         let content_type =
-            ContentType::from_filename(file_name.as_ref()).expect("The extension is not supported");
+            ContentType::from_filename(file_name.as_ref()).unwrap_or_default();
         let body = Response::builder()
             .status(StatusCode::OK)
             .header(CONTENT_TYPE, content_type)
-            .header(CONTENT_DISPOSITION, ContentDisposition::new(file_name))
+            .header(CONTENT_DISPOSITION, ContentDisposition::new(Some(file_name.as_ref().into()), None))
             .header(ACCESS_CONTROL_EXPOSE_HEADERS, CONTENT_DISPOSITION)
             .body(Body::from(buf))
             .unwrap();

@@ -10,17 +10,6 @@ pub struct Basic {
     password: String,
 }
 
-#[cfg(feature = "axum")]
-#[axum::async_trait]
-impl<S> axum::extract::FromRequestParts<S> for Basic {
-    type Rejection = String;
-    async fn from_request_parts(
-        parts: &mut axum::http::request::Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        Self::try_from(&parts.headers).map_err(|err| err.to_string())
-    }
-}
 
 use hyper::header::AUTHORIZATION;
 impl TryFrom<&HeaderMap> for Basic {

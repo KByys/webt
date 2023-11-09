@@ -1,3 +1,6 @@
+
+# Basic Example
+```rust
 use url::form_urlencoded::byte_serialize;
 use webt::header::{ContentDisposition, HeaderKey};
 fn main() {
@@ -29,3 +32,43 @@ fn header_value_test() -> Result<(), webt::header::HeaderParserError> {
     assert_eq!(val, content);
     Ok(())
 }
+
+
+
+```
+
+# Support [axum](https://crates.io/crates/axum) web framework
+```toml
+axum = "*"
+webt = {version = "*", features = ["axum"]}
+tokio = {version = "*", features = ["full"]}
+```
+
+```rust
+use std::net::SocketAddr;
+use axum::{routing::get, Router, Server};
+use hyper::{HeaderMap, StatusCode};
+use webt::{header::Bearer, BodyFile, ResponseError};
+pub async fn download_toml() -> Result<BodyFile, ResponseError> {
+    let file = BodyFile::open("Cargo.toml")?;
+    Ok(file)
+}
+pub async fn get_bearer(header_map: HeaderMap) -> (StatusCode, String) {
+    let bearer = Bearer::try_from(&header_map).ok();
+    (StatusCode::OK, format!("{:?}", bearer))
+}
+#[tokio::main]
+async fn main() {
+    let router = Router::new()
+        .route("/download/toml", get(download_toml))
+        .route("/get/bearer", get(get_bearer));
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3080));
+
+    Server::bind(&addr)
+        .serve(router.into_make_service())
+        .await
+        .unwrap();
+}
+
+```

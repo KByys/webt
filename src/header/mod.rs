@@ -25,7 +25,6 @@ pub trait HeaderKey {
     }
 }
 
-pub struct Header<T>(pub T);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HeaderParserError {

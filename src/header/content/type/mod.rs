@@ -5,22 +5,19 @@ use std::path::PathBuf;
 use hyper::{header::HeaderName, header::HeaderValue, HeaderMap};
 
 use crate::header::{HeaderKey, HeaderParserError};
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct ContentType {
     inner: String,
 }
-#[cfg(features = "axum")]
-#[axum::async_trait]
-impl<S> axum::extract::FromRequestParts<S> for ContentType {
-    type Rejection = String;
 
-    async fn from_request_parts(
-        parts: &mut axum::http::request::Parts,
-        _state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        Self::try_from(&parts.headers).map_err(|err| err.to_string())
+impl Default for ContentType {
+    fn default() -> Self {
+        Self {
+            inner: "text/plain".to_owned(),
+        }
     }
 }
+
 use hyper::header::CONTENT_TYPE;
 impl TryFrom<&HeaderMap> for ContentType {
     type Error = HeaderParserError;
