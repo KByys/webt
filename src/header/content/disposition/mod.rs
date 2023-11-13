@@ -2,9 +2,8 @@ use std::collections::HashMap;
 
 use hyper::header::HeaderValue;
 use hyper::HeaderMap;
-use url;
-use url::form_urlencoded::byte_serialize;
 
+use crate::byte_serialize;
 use crate::header::{HeaderKey, HeaderParserError};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -49,9 +48,7 @@ fn parse(inner: &str) -> (Option<String>, Option<String>) {
         let filename = decoded_str
             .get("filename")
             .map(|name| name.replace('\"', ""));
-        let name = decoded_str
-            .get("name")
-            .map(|name| name.replace('\"', ""));
+        let name = decoded_str.get("name").map(|name| name.replace('\"', ""));
         (filename, name)
     } else {
         (None, None)
@@ -112,18 +109,12 @@ impl ContentDisposition {
     pub fn new(filename: Option<String>, name: Option<String>) -> Self {
         let mut encode_str = String::new();
         if let Some(filename) = &filename {
-            encode_str = format!(
-                "filename=\"{}\"",
-                byte_serialize(filename.as_bytes()).collect::<String>()
-            );
+            encode_str = format!("filename=\"{}\"", byte_serialize(filename.as_bytes()));
         }
 
         if let Some(name) = &name {
             if encode_str.is_empty() {
-                encode_str = format!(
-                    "filename=\"{}\"",
-                    byte_serialize(name.as_bytes()).collect::<String>()
-                );
+                encode_str = format!("name=\"{}\"", byte_serialize(name.as_bytes()));
             } else {
                 encode_str = format!("{}&name=\"{}\"", encode_str, name);
             }
@@ -145,7 +136,7 @@ impl ContentDisposition {
     pub fn new_with_filename(filename: impl AsRef<str>) -> Self {
         let inner = format!(
             "filename=\"{}\"",
-            byte_serialize(filename.as_ref().as_bytes()).collect::<String>()
+            byte_serialize(filename.as_ref().as_bytes())
         );
         Self {
             inner: format!("attachment; {}", inner),

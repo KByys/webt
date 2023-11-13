@@ -9,5 +9,15 @@ homepage = "https://github.com/KByys/webt.git"
 axum = { version = "0.6.20", optional = true }
 base64 = "0.21.5"
 hyper = "0.14.27"
+serde = { version = "1.0.192" }
+serde_json = "1.0.108"
 url = "2.4.1"
+reqwest = { version = "0.11.22", features = [
+    "json",
+    "multipart",
+], default-features = false, optional = true}
+fdir = "0.1.9"
+
+
 [features]
+request = ["reqwest"]

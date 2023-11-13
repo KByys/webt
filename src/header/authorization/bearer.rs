@@ -1,5 +1,3 @@
-use std::pin::Pin;
-
 use hyper::header::{HeaderMap, HeaderValue};
 
 use crate::header::{HeaderKey, HeaderParserError};
@@ -60,25 +58,6 @@ unsafe impl Send for Bearer {}
 
 unsafe impl Sync for Bearer {}
 impl Unpin for Bearer {}
-impl hyper::body::HttpBody for Bearer {
-    type Data = <std::string::String as hyper::body::HttpBody>::Data;
-
-    type Error = <std::string::String as hyper::body::HttpBody>::Error;
-
-    fn poll_data(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Option<Result<Self::Data, Self::Error>>> {
-        Pin::new(&mut self.bearer).poll_data(cx)
-    }
-
-    fn poll_trailers(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<Option<HeaderMap>, Self::Error>> {
-        Pin::new(&mut self.bearer).poll_trailers(cx)
-    }
-}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bearer {
     bearer: String,
