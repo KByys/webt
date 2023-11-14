@@ -1,5 +1,6 @@
 use std::ffi::OsStr;
 
+#[allow(unused)]
 pub fn match_self(content_type: &str) -> Option<&'static str> {
     let content_type = match content_type {
         "application/octet-stream" => "application/octet-stream",

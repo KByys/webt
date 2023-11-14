@@ -1,10 +1,10 @@
 
-# Basic Example
+# Example
 ```rust
-use url::form_urlencoded::byte_serialize;
+use webt::byte_serialize;
 use webt::header::{ContentDisposition, HeaderKey};
 fn main() {
-    let file_name: String = byte_serialize("文件file.rs".as_bytes()).collect();
+    let file_name = byte_serialize("文件file.rs");
 
     let dis = ContentDisposition::try_from(format!("attachment; filename={}", file_name)).unwrap();
     assert_eq!(dis.file_name(), Some("文件file.rs"));
@@ -16,24 +16,6 @@ fn main() {
     let dis1 = ContentDisposition::new_with_filename("文件file.rs");
     assert_eq!(dis1, dis);
 }
-
-#[allow(unused)]
-fn header_value_test() -> Result<(), webt::header::HeaderParserError> {
-    use hyper::header::{HeaderMap, CONTENT_DISPOSITION};
-    use webt::header::HeaderParserError;
-    let mut header = HeaderMap::new();
-    assert_eq!(
-        Err(HeaderParserError::MissingHeaderValue(CONTENT_DISPOSITION)),
-        ContentDisposition::try_from(&header)
-    );
-    let val = ContentDisposition::new(Some("test.rs".into()), None);
-    header.insert(val.header_name(), val.header_value());
-    let content = ContentDisposition::try_from(&header)?;
-    assert_eq!(val, content);
-    Ok(())
-}
-
-
 
 ```
 
@@ -70,5 +52,94 @@ async fn main() {
         .await
         .unwrap();
 }
+
+```
+
+# Support [reqewst](https://crates.io/crates/reqwest)  HTTP client Multipart
+
+```toml
+webt = { version = "*", features = ["request"] }
+tokio = { version = "*", features = ["full"] }
+reqwest = { version = "*", features = ["multipart"]}
+axum = {version = "*", features = ["multipart", "headers"]}
+tower-http = { version = "0.4.4", features = ["cors"] }
+```
+```rust
+
+use std::path::PathBuf;
+use webt::request::FormData;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+    let mut form_data = FormData::new();
+    let path = PathBuf::from("Cargo.toml");
+    form_data.append("file", path)?;
+    form_data.append("text", "hello world").unwrap();
+
+    let response = client
+        .post("http://localhost:80/upload")
+        .multipart(form_data.into())
+        .send()
+        .await?
+        .text()
+        .await?;
+    assert_eq!(response.as_str(), "ok");
+    Ok(())
+}
+
+```
+
+```rust
+use axum::{
+    extract::{DefaultBodyLimit, Multipart},
+    http::Method,
+    routing::post,
+    Router, Server,
+};
+use hyper::StatusCode;
+use std::net::SocketAddr;
+use tower_http::cors::Any;
+#[tokio::main]
+async fn main() {
+    let router = Router::new()
+        .route("/upload", post(upload))
+        .layer(
+            tower_http::cors::CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods([Method::GET, Method::POST, Method::DELETE]),
+        )
+        .layer(DefaultBodyLimit::max(70 * 1024 * 1024));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 80));
+
+    Server::bind(&addr)
+        .serve(router.into_make_service())
+        .await
+        .unwrap();
+}
+async fn upload(mut part: Multipart) -> (StatusCode, String) {
+    while let Ok(Some(field)) = part.next_field().await {
+        match field.name() {
+            Some("text") => {
+                let text = field.text().await.unwrap();
+                if text.as_str() != "hello world" {
+                    return (StatusCode::OK, format!("text: {}", text));
+                }
+            }
+            Some("file") => match field.file_name() {
+                Some("Cargo.toml") => (),
+                _ => {
+                    return (
+                        StatusCode::OK,
+                        "error, filename is not Cargo.toml".to_string(),
+                    )
+                }
+            },
+            _ => return (StatusCode::OK, "Unreadable field".into()),,
+        }
+    }
+    (StatusCode::OK, "ok".into())
+}
+
 
 ```

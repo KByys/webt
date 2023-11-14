@@ -1,7 +1,7 @@
-use url::form_urlencoded::byte_serialize;
+use webt::byte_serialize;
 use webt::header::{ContentDisposition, HeaderKey};
 fn main() {
-    let file_name: String = byte_serialize("文件file.rs".as_bytes()).collect();
+    let file_name = byte_serialize("文件file.rs");
 
     let dis = ContentDisposition::try_from(format!("attachment; filename={}", file_name)).unwrap();
     assert_eq!(dis.file_name(), Some("文件file.rs"));

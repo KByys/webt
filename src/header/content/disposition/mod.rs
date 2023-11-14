@@ -102,17 +102,41 @@ impl ContentDisposition {
     pub fn name(&self) -> Option<&str> {
         Some(self.name.as_ref()?)
     }
-
+    pub fn from_str(&self, value: impl AsRef<str>) -> Self {
+        if let Ok(value) = Self::try_from(value.as_ref()) {
+            value
+        } else {
+            Self {
+                inner: value.as_ref().to_owned(),
+                ..Default::default()
+            }
+        }
+    }
+    pub fn from_header_map(&self, value: &HeaderMap) -> Self {
+        if let Ok(value) = Self::try_from(value) {
+            value
+        } else {
+            Default::default()
+        }
+    }
     pub fn is_inline(&self) -> bool {
         self.inner.starts_with("inline")
     }
-    pub fn new(filename: Option<String>, name: Option<String>) -> Self {
+    pub fn set_name(&mut self, name: impl AsRef<str>) {
+        self.name = Some(name.as_ref().to_owned());
+        self.inner = self.builder();
+    }
+    pub fn set_filename(&mut self, filename: impl AsRef<str>) {
+        self.filename = Some(filename.as_ref().to_owned());
+        self.inner = self.builder();
+    }
+    fn builder(&self) -> String {
         let mut encode_str = String::new();
-        if let Some(filename) = &filename {
+        if let Some(filename) = &self.filename {
             encode_str = format!("filename=\"{}\"", byte_serialize(filename.as_bytes()));
         }
 
-        if let Some(name) = &name {
+        if let Some(name) = &self.name {
             if encode_str.is_empty() {
                 encode_str = format!("name=\"{}\"", byte_serialize(name.as_bytes()));
             } else {
@@ -120,18 +144,20 @@ impl ContentDisposition {
             }
         }
         if encode_str.is_empty() {
-            Self {
-                inner: "attachment;".to_owned(),
-                filename: None,
-                name: None,
-            }
+            "attachment;".to_owned()
         } else {
-            Self {
-                inner: format!("attachment; {}", encode_str),
-                filename,
-                name,
-            }
+            format!("attachment; {}", encode_str)
         }
+    }
+
+    pub fn new(filename: Option<String>, name: Option<String>) -> Self {
+        let mut value = Self {
+            inner: String::new(),
+            name,
+            filename,
+        };
+        value.inner = value.builder();
+        value
     }
     pub fn new_with_filename(filename: impl AsRef<str>) -> Self {
         let inner = format!(

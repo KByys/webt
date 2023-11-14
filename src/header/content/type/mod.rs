@@ -37,15 +37,11 @@ impl From<&str> for ContentType {
         }
     }
 }
-use hyper::http::Error;
 impl TryFrom<ContentType> for HeaderValue {
-    type Error = Error;
+    type Error = hyper::header::InvalidHeaderValue;
 
     fn try_from(value: ContentType) -> Result<Self, Self::Error> {
-        match r#match::match_self(&value.inner) {
-            Some(value) => Ok(HeaderValue::from_static(value)),
-            _ => Ok(HeaderValue::from_str(&value.inner)?),
-        }
+        HeaderValue::from_str(&value.inner)
     }
 }
 

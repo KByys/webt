@@ -30,12 +30,14 @@ impl BodyFile {
     pub fn open_and_set(file_name: impl AsRef<str>, path: impl AsRef<Path>) -> Result<Self> {
         let buf = read(path)?;
 
-        let content_type =
-            ContentType::from_filename(file_name.as_ref()).unwrap_or_default();
+        let content_type = ContentType::from_filename(file_name.as_ref()).unwrap_or_default();
         let body = Response::builder()
             .status(StatusCode::OK)
             .header(CONTENT_TYPE, content_type)
-            .header(CONTENT_DISPOSITION, ContentDisposition::new(Some(file_name.as_ref().into()), None))
+            .header(
+                CONTENT_DISPOSITION,
+                ContentDisposition::new_with_filename(file_name),
+            )
             .header(ACCESS_CONTROL_EXPOSE_HEADERS, CONTENT_DISPOSITION)
             .body(Body::from(buf))
             .unwrap();
