@@ -1,7 +1,7 @@
+use axum::http;
+use http::header::HeaderValue;
+use http::HeaderMap;
 use std::collections::HashMap;
-
-use hyper::header::HeaderValue;
-use hyper::HeaderMap;
 
 use crate::byte_serialize;
 use crate::header::{HeaderKey, HeaderParserError};
@@ -21,7 +21,7 @@ impl Default for ContentDisposition {
         }
     }
 }
-use hyper::header::CONTENT_DISPOSITION;
+use http::header::CONTENT_DISPOSITION;
 impl TryFrom<&HeaderMap> for ContentDisposition {
     type Error = HeaderParserError;
 
@@ -86,7 +86,7 @@ impl TryFrom<&str> for ContentDisposition {
         }
     }
 }
-use hyper::http::Error;
+use http::Error;
 impl TryFrom<ContentDisposition> for HeaderValue {
     type Error = Error;
 
@@ -113,10 +113,9 @@ impl ContentDisposition {
         }
     }
     pub fn from_header_map(&self, value: &HeaderMap) -> Self {
-        if let Ok(value) = Self::try_from(value) {
-            value
-        } else {
-            Default::default()
+        match Self::try_from(value) {
+            Ok(value) => value,
+            _ => Default::default(),
         }
     }
     pub fn is_inline(&self) -> bool {
@@ -159,7 +158,7 @@ impl ContentDisposition {
         value.inner = value.builder();
         value
     }
-    pub fn new_with_filename(filename: impl AsRef<str>) -> Self {
+    pub fn from_filename(filename: impl AsRef<str>) -> Self {
         let inner = format!(
             "filename=\"{}\"",
             byte_serialize(filename.as_ref().as_bytes())
@@ -170,10 +169,18 @@ impl ContentDisposition {
             name: None,
         }
     }
+    pub fn from_name(name: impl AsRef<str>) -> Self {
+        let inner = format!("name=\"{}\"", byte_serialize(name.as_ref().as_bytes()));
+        Self {
+            inner: format!("attachment; {}", inner),
+            filename: Some(name.as_ref().into()),
+            name: None,
+        }
+    }
 }
 
 impl HeaderKey for ContentDisposition {
-    fn header_name(&self) -> hyper::http::HeaderName {
+    fn header_name(&self) -> http::HeaderName {
         CONTENT_DISPOSITION
     }
 

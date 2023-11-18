@@ -1,7 +1,7 @@
-use base64::{engine::general_purpose::STANDARD, Engine};
-use hyper::header::{HeaderMap, HeaderValue};
-
 use crate::header::{HeaderKey, HeaderParserError};
+use axum::http;
+use base64::{engine::general_purpose::STANDARD, Engine};
+use http::header::{HeaderMap, HeaderValue};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Basic {
@@ -10,8 +10,7 @@ pub struct Basic {
     password: String,
 }
 
-
-use hyper::header::AUTHORIZATION;
+use http::header::AUTHORIZATION;
 impl TryFrom<&HeaderMap> for Basic {
     type Error = HeaderParserError;
     fn try_from(value: &HeaderMap) -> Result<Self, Self::Error> {
@@ -70,6 +69,10 @@ impl TryFrom<&str> for Basic {
 }
 
 impl Basic {
+    pub fn from_header(header: &HeaderMap) -> Result<Self, HeaderParserError> {
+        Self::try_from(header)
+    }
+
     pub fn new(username: impl Into<String>, password: impl Into<String>) -> Self {
         let username = username.into();
         let password = password.into();
@@ -88,7 +91,7 @@ impl Basic {
     }
 }
 impl HeaderKey for Basic {
-    fn header_name(&self) -> hyper::http::HeaderName {
+    fn header_name(&self) -> http::HeaderName {
         AUTHORIZATION
     }
 

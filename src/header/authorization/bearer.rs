@@ -1,7 +1,8 @@
-use hyper::header::{HeaderMap, HeaderValue};
+use axum::http;
+use http::header::{HeaderMap, HeaderValue};
 
 use crate::header::{HeaderKey, HeaderParserError};
-use hyper::header::AUTHORIZATION;
+use http::header::AUTHORIZATION;
 
 impl TryFrom<&HeaderMap> for Bearer {
     type Error = HeaderParserError;
@@ -81,7 +82,7 @@ impl Bearer {
     }
 }
 impl HeaderKey for Bearer {
-    fn header_name(&self) -> hyper::http::HeaderName {
+    fn header_name(&self) -> http::HeaderName {
         AUTHORIZATION
     }
 

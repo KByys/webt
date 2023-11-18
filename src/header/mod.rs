@@ -1,14 +1,13 @@
 pub mod authorization;
 pub mod content;
-#[allow(unused)]
-mod cookie;
 use base64::DecodeError;
-use hyper::header::ToStrError;
+use axum::http;
+use http::header::ToStrError;
 use std::{fmt::Display, string::FromUtf8Error};
 pub use {
     authorization::{Basic, Bearer},
     content::{ContentDisposition, ContentType},
-    hyper::header::{HeaderMap, HeaderName, HeaderValue, InvalidHeaderName, InvalidHeaderValue},
+    http::header::{HeaderMap, HeaderName, HeaderValue, InvalidHeaderName, InvalidHeaderValue},
 };
 
 pub trait HeaderKey {

@@ -2,7 +2,8 @@ mod r#match;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 
-use hyper::{header::HeaderName, header::HeaderValue, HeaderMap};
+use axum::http;
+use http::{header::HeaderName, header::HeaderValue, HeaderMap};
 
 use crate::header::{HeaderKey, HeaderParserError};
 #[derive(Debug, Clone)]
@@ -18,7 +19,7 @@ impl Default for ContentType {
     }
 }
 
-use hyper::header::CONTENT_TYPE;
+use http::header::CONTENT_TYPE;
 impl TryFrom<&HeaderMap> for ContentType {
     type Error = HeaderParserError;
 
@@ -38,7 +39,7 @@ impl From<&str> for ContentType {
     }
 }
 impl TryFrom<ContentType> for HeaderValue {
-    type Error = hyper::header::InvalidHeaderValue;
+    type Error = http::header::InvalidHeaderValue;
 
     fn try_from(value: ContentType) -> Result<Self, Self::Error> {
         HeaderValue::from_str(&value.inner)
@@ -76,7 +77,7 @@ impl HeaderKey for ContentType {
         }
     }
 
-    fn try_header_value(&self) -> Result<HeaderValue, hyper::header::InvalidHeaderValue> {
+    fn try_header_value(&self) -> Result<HeaderValue, http::header::InvalidHeaderValue> {
         HeaderValue::from_str(self.value())
     }
 }
